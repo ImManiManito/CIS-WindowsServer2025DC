@@ -1,0 +1,9 @@
+---
+- name: Remove registry values CIS requires to be absent
+  ansible.windows.win_regedit:
+    path: "{{ item.path }}"
+    name: "{{ item.name }}"
+    state: absent
+  loop: "{{ cis_registry_removals }}"
+  loop_control:
+    label: "{{ item.id }} - {{ item.name }}"

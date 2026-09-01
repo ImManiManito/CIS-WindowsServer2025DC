@@ -1,0 +1,13 @@
+{
+  "benchmark": "CIS Microsoft Windows Server 2025 v2.1.0 L1 DC",
+  "source_file": "CIS_Microsoft_Windows_Server_2025_v2.1.0_L1_DC (1).audit",
+  "custom_items": 325,
+  "machine_registry_automated": 194,
+  "user_registry_review": 7,
+  "registry_unsupported_review": 18,
+  "registry_removals": 3,
+  "user_rights": 38,
+  "audit_subcategories": 34,
+  "password_policy_checks": 7,
+  "lockout_policy_checks": 3
+}

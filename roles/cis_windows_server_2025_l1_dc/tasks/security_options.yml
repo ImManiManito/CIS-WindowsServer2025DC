@@ -1,0 +1,12 @@
+---
+- name: Disable anonymous SID/Name translation (CIS 2.3.10.1)
+  community.windows.win_security_policy:
+    section: "System Access"
+    key: "LSAAnonymousNameLookup"
+    value: 0
+
+- name: Force logoff when logon hours expire (CIS 2.3.11.5)
+  community.windows.win_security_policy:
+    section: "System Access"
+    key: "ForceLogoffWhenHourExpire"
+    value: 1

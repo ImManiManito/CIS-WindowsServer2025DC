@@ -1,0 +1,2 @@
+---
+# No unconditional reboot handler. Reboots must be planned explicitly for Domain Controllers.

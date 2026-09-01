@@ -1,0 +1,10 @@
+---
+# Site-specific overrides. Keep high-impact controls disabled until validated.
+cis_apply_domain_account_policy: false
+cis_apply_user_rights: false
+cis_apply_machine_registry: true
+cis_apply_registry_removals: true
+cis_apply_audit_policy: true
+cis_apply_security_options: true
+cis_apply_account_renames: false
+cis_apply_logon_banner: false

@@ -1,0 +1,11 @@
+---
+- name: Apply CIS machine registry settings
+  ansible.windows.win_regedit:
+    path: "{{ item.path }}"
+    name: "{{ item.name }}"
+    data: "{{ item.data }}"
+    type: "{{ item.registry_type }}"
+    state: present
+  loop: "{{ cis_registry_settings }}"
+  loop_control:
+    label: "{{ item.id }} - {{ item.name }}"

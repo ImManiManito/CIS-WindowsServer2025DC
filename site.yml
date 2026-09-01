@@ -1,0 +1,7 @@
+---
+- name: CIS Microsoft Windows Server 2025 v2.1.0 L1 Domain Controller
+  hosts: windows_2025_dc
+  gather_facts: false
+  serial: 1
+  roles:
+    - role: cis_windows_server_2025_l1_dc

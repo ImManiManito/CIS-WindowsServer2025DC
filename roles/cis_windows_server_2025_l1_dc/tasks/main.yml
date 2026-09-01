@@ -1,0 +1,35 @@
+---
+- name: Run preflight checks
+  ansible.builtin.include_tasks: preflight.yml
+
+- name: Configure domain account policy
+  ansible.builtin.include_tasks: domain_account_policy.yml
+  when: cis_apply_domain_account_policy | bool
+
+- name: Configure machine registry policies
+  ansible.builtin.include_tasks: registry.yml
+  when: cis_apply_machine_registry | bool
+
+- name: Remove registry values that CIS requires not to exist
+  ansible.builtin.include_tasks: registry_removals.yml
+  when: cis_apply_registry_removals | bool
+
+- name: Configure advanced audit policy
+  ansible.builtin.include_tasks: audit_policy.yml
+  when: cis_apply_audit_policy | bool
+
+- name: Configure User Rights Assignment
+  ansible.builtin.include_tasks: user_rights.yml
+  when: cis_apply_user_rights | bool
+
+- name: Configure additional security options
+  ansible.builtin.include_tasks: security_options.yml
+  when: cis_apply_security_options | bool
+
+- name: Configure optional account renames
+  ansible.builtin.include_tasks: account_renames.yml
+  when: cis_apply_account_renames | bool
+
+- name: Configure optional logon banner
+  ansible.builtin.include_tasks: banner.yml
+  when: cis_apply_logon_banner | bool

@@ -1,0 +1,8 @@
+---
+- name: Apply CIS Advanced Audit Policy subcategories
+  ansible.windows.win_audit_policy_system:
+    subcategory: "{{ item.subcategory }}"
+    audit_type: "{{ (item.success and item.failure) | ternary('success, failure', item.success | ternary('success', 'failure')) }}"
+  loop: "{{ cis_audit_policies }}"
+  loop_control:
+    label: "{{ item.id }} - {{ item.subcategory }}"

@@ -1,0 +1,33 @@
+---
+# CIS notes that password/lockout policy for domain users must be effective at domain level.
+# This task changes the Default Domain Password Policy through the AD PowerShell cmdlets.
+# It intentionally does not edit arbitrary local security policy on a DC.
+- name: Configure effective default domain password and lockout policy
+  ansible.windows.win_powershell:
+    script: |
+      Import-Module ActiveDirectory
+      $domain = Get-ADDomain
+      $desired = @{
+        Identity = $domain.DistinguishedName
+        PasswordHistoryCount = {{ cis_domain_password_history }}
+        MaxPasswordAge = (New-TimeSpan -Days {{ cis_domain_max_password_age_days }})
+        MinPasswordAge = (New-TimeSpan -Days {{ cis_domain_min_password_age_days }})
+        MinPasswordLength = {{ cis_domain_min_password_length }}
+        ComplexityEnabled = ${{ cis_domain_complexity_enabled | ternary('true','false') }}
+        ReversibleEncryptionEnabled = ${{ cis_domain_reversible_encryption_enabled | ternary('true','false') }}
+        LockoutDuration = (New-TimeSpan -Minutes {{ cis_domain_lockout_duration_minutes }})
+        LockoutThreshold = {{ cis_domain_lockout_threshold }}
+        LockoutObservationWindow = (New-TimeSpan -Minutes {{ cis_domain_lockout_observation_window_minutes }})
+      }
+      $cur = Get-ADDefaultDomainPasswordPolicy
+      $changed = ($cur.PasswordHistoryCount -ne $desired.PasswordHistoryCount) -or
+                 ($cur.MaxPasswordAge -ne $desired.MaxPasswordAge) -or
+                 ($cur.MinPasswordAge -ne $desired.MinPasswordAge) -or
+                 ($cur.MinPasswordLength -ne $desired.MinPasswordLength) -or
+                 ($cur.ComplexityEnabled -ne $desired.ComplexityEnabled) -or
+                 ($cur.ReversibleEncryptionEnabled -ne $desired.ReversibleEncryptionEnabled) -or
+                 ($cur.LockoutDuration -ne $desired.LockoutDuration) -or
+                 ($cur.LockoutThreshold -ne $desired.LockoutThreshold) -or
+                 ($cur.LockoutObservationWindow -ne $desired.LockoutObservationWindow)
+      if ($changed) { Set-ADDefaultDomainPasswordPolicy @desired }
+      $Ansible.Changed = $changed

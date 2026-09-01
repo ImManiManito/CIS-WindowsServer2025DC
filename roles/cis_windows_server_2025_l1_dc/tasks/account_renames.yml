@@ -1,0 +1,18 @@
+---
+- name: Rename built-in Administrator account by RID 500
+  ansible.windows.win_powershell:
+    script: |
+      $u = Get-CimInstance Win32_UserAccount -Filter "LocalAccount=True" | Where-Object { $_.SID -match '-500$' }
+      if ($u -and $u.Name -ne '{{ cis_administrator_account_name }}') {
+        Rename-LocalUser -Name $u.Name -NewName '{{ cis_administrator_account_name }}'
+        $Ansible.Changed = $true
+      }
+
+- name: Rename built-in Guest account by RID 501
+  ansible.windows.win_powershell:
+    script: |
+      $u = Get-CimInstance Win32_UserAccount -Filter "LocalAccount=True" | Where-Object { $_.SID -match '-501$' }
+      if ($u -and $u.Name -ne '{{ cis_guest_account_name }}') {
+        Rename-LocalUser -Name $u.Name -NewName '{{ cis_guest_account_name }}'
+        $Ansible.Changed = $true
+      }
