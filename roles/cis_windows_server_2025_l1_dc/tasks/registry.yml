@@ -7,6 +7,6 @@
     type: "{{ item.registry_type }}"
     state: present
   loop: "{{ cis_registry_settings }}"
-  throttle: 5
+  throttle: 8
   loop_control:
     label: "{{ item.id }} - {{ item.name }}"

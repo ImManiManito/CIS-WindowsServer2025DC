@@ -5,6 +5,6 @@
     users: "{{ item.users }}"
     action: set
   loop: "{{ cis_user_rights }}"
-  throttle: 3
+  throttle: 5
   loop_control:
     label: "{{ item.id }} - {{ item.name }}"
