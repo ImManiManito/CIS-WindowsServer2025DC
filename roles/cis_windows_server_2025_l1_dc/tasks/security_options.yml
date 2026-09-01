@@ -4,7 +4,7 @@
     section: "System Access"
     key: "LSAAnonymousNameLookup"
     value: 0
-  throttle: 2
+  throttle: 3
 
 - name: Force logoff when logon hours expire (CIS 2.3.11.5)
   community.windows.win_security_policy:

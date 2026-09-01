@@ -4,6 +4,6 @@
     subcategory: "{{ item.subcategory }}"
     audit_type: "{{ (item.success and item.failure) | ternary('success, failure', item.success | ternary('success', 'failure')) }}"
   loop: "{{ cis_audit_policies }}"
-  throttle: 4
+  throttle: 5
   loop_control:
     label: "{{ item.id }} - {{ item.subcategory }}"
