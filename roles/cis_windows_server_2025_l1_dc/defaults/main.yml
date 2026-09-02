@@ -1684,16 +1684,19 @@ cis_user_rights:
   - id: 2.2.11
     description: 2.2.11 Ensure 'Back up files and directories' is set to 'Administrators'
     name: SeBackupPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.12
     description: 2.2.12 Ensure 'Change the system time' is set to 'Administrators, LOCAL SERVICE'
     name: SeSystemTimePrivilege
     users:
-    - ' && '
+    - S-1-5-32-544
+    - S-1-5-19
   - id: 2.2.13
     description: 2.2.13 Ensure 'Create a pagefile' is set to 'Administrators'
     name: SeCreatePagefilePrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.14
     description: 2.2.14 Ensure 'Create a token object' is set to 'No One'
     name: SeCreateTokenPrivilege
@@ -1702,9 +1705,10 @@ cis_user_rights:
     description: 2.2.15 Ensure 'Create global objects' is set to 'Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE'
     name: SeCreateGlobalPrivilege
     users:
-    - ' && '
-    - ' && '
-    - ' && '
+    - S-1-5-32-544
+    - S-1-5-19
+    - S-1-5-20
+    - S-1-5-6
   - id: 2.2.16
     description: 2.2.16 Ensure 'Create permanent shared objects' is set to 'No One'
     name: SeCreatePermanentPrivilege
@@ -1712,73 +1716,84 @@ cis_user_rights:
   - id: 2.2.17
     description: 2.2.17 Ensure 'Create symbolic links' is set to 'Administrators' (DC only)
     name: SeCreateSymbolicLinkPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.19
     description: 2.2.19 Ensure 'Debug programs' is set to 'Administrators'
     name: SeDebugPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.2
     description: 2.2.2 Ensure 'Access this computer from the network' is set to 'Administrators, Authenticated Users, ENTERPRISE DOMAIN CONTROLLERS'
       (DC only)
     name: SeNetworkLogonRight
     users:
-    - ' && '
-    - ' && '
+    - S-1-5-32-544
+    - S-1-5-11
+    - S-1-5-9
   - id: 2.2.20
     description: 2.2.20 Ensure 'Deny access to this computer from the network' to include 'Guests' (DC only)
     name: SeDenyNetworkLogonRight
-    users: []
+    users:
+    - S-1-5-32-546
   - id: 2.2.22
     description: 2.2.22 Ensure 'Deny log on as a batch job' to include 'Guests'
     name: SeDenyBatchLogonRight
-    users: []
+    users:
+    - S-1-5-32-546
   - id: 2.2.23
     description: 2.2.23 Ensure 'Deny log on as a service' to include 'Guests'
     name: SeDenyServiceLogonRight
-    users: []
+    users:
+    - S-1-5-32-546
   - id: 2.2.24
     description: 2.2.24 Ensure 'Deny log on locally' to include 'Guests'
     name: SeDenyInteractiveLogonRight
-    users: []
+    users:
+    - S-1-5-32-546
   - id: 2.2.25
     description: 2.2.25 Ensure 'Deny log on through Remote Desktop Services' to include 'Guests' (DC only)
     name: SeDenyRemoteInteractiveLogonRight
-    users: []
+    users:
+    - S-1-5-32-546
   - id: 2.2.27
     description: 2.2.27 Ensure 'Enable computer and user accounts to be trusted for delegation' is set to 'Administrators' (DC only)
     name: SeEnableDelegationPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.29
     description: 2.2.29 Ensure 'Force shutdown from a remote system' is set to 'Administrators'
     name: SeRemoteShutdownPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.30
     description: 2.2.30 Ensure 'Generate security audits' is set to 'LOCAL SERVICE, NETWORK SERVICE, RESTRICTED SERVICES\PrintSpoolerService'
     name: SeAuditPrivilege
     users:
-    - LOCAL SERVICE
-    - NETWORK SERVICE
-    - NT SERVICE\\PrintSpoolerService
+    - S-1-5-19
+    - S-1-5-20
+    - S-1-5-80-880578573-10850447-2880856750-2730071503-1747020197
   - id: 2.2.31
     description: 2.2.31 Ensure 'Impersonate a client after authentication' is set to 'Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE, RESTRICTED
       SERVICES\PrintSpoolerService' (DC only)
     name: SeImpersonatePrivilege
     users:
-    - Administrators
-    - Local Service
-    - Network Service
-    - Service
-    - NT SERVICE\\PrintSpoolerService
+    - S-1-5-32-544
+    - S-1-5-19
+    - S-1-5-20
+    - S-1-5-6
+    - S-1-5-80-880578573-10850447-2880856750-2730071503-1747020197
   - id: 2.2.33
     description: 2.2.33 Ensure 'Increase scheduling priority' is set to 'Administrators, Window Manager\Window Manager Group'
     name: SeIncreaseBasePriorityPrivilege
     users:
-    - Administrators
-    - Window Manager\\Window Manager Group
+    - S-1-5-32-544
+    - S-1-5-32-559
   - id: 2.2.34
     description: 2.2.34 Ensure 'Load and unload device drivers' is set to 'Administrators'
     name: SeLoadDriverPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.35
     description: 2.2.35 Ensure 'Lock pages in memory' is set to 'No One'
     name: SeLockMemoryPrivilege
@@ -1787,7 +1802,7 @@ cis_user_rights:
     description: 2.2.37 Ensure 'Manage auditing and security log' is set to 'Administrators' (DC only)
     name: SeSecurityPrivilege
     users:
-    - Administrators
+    - S-1-5-32-544
   - id: 2.2.39
     description: 2.2.39 Ensure 'Modify an object label' is set to 'No One'
     name: SeReLabelPrivilege
@@ -1799,34 +1814,40 @@ cis_user_rights:
   - id: 2.2.40
     description: 2.2.40 Ensure 'Modify firmware environment values' is set to 'Administrators'
     name: SeSystemEnvironmentPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.41
     description: 2.2.41 Ensure 'Perform volume maintenance tasks' is set to 'Administrators'
     name: SeManageVolumePrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.42
     description: 2.2.42 Ensure 'Profile single process' is set to 'Administrators'
     name: SeProfileSingleProcessPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.43
     description: 2.2.43 Ensure 'Profile system performance' is set to 'Administrators, NT SERVICE\WdiServiceHost'
     name: SeSystemProfilePrivilege
     users:
-    - Administrators
-    - NT SERVICE\WdiServiceHost
+    - S-1-5-32-544
+    - S-1-5-80-297061183-605765143-2612092036-20473260-1705769333
   - id: 2.2.44
     description: 2.2.44 Ensure 'Replace a process level token' is set to 'LOCAL SERVICE, NETWORK SERVICE'
     name: SeAssignPrimaryTokenPrivilege
     users:
-    - ' && '
+    - S-1-5-19
+    - S-1-5-20
   - id: 2.2.45
     description: 2.2.45 Ensure 'Restore files and directories' is set to 'Administrators'
     name: SeRestorePrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.46
     description: 2.2.46 Ensure 'Shut down the system' is set to 'Administrators'
     name: SeShutdownPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.47
     description: 2.2.47 Ensure 'Synchronize directory service data' is set to 'No One' (DC only)
     name: SeSyncAgentPrivilege
@@ -1834,26 +1855,31 @@ cis_user_rights:
   - id: 2.2.48
     description: 2.2.48 Ensure 'Take ownership of files or other objects' is set to 'Administrators'
     name: SeTakeOwnershipPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.5
     description: 2.2.5 Ensure 'Add workstations to domain' is set to 'Administrators' (DC only)
     name: SeMachineAccountPrivilege
-    users: []
+    users:
+    - S-1-5-32-544
   - id: 2.2.6
     description: 2.2.6 Ensure 'Adjust memory quotas for a process' is set to 'Administrators, LOCAL SERVICE, NETWORK SERVICE'
     name: SeIncreaseQuotaPrivilege
     users:
-    - ' && '
-    - ' && '
+    - S-1-5-32-544
+    - S-1-5-19
+    - S-1-5-20
   - id: 2.2.7
     description: 2.2.7 Ensure 'Allow log on locally' is set to 'Administrators, ENTERPRISE DOMAIN CONTROLLERS' (DC only)
     name: SeInteractiveLogonRight
     users:
-    - ' && '
+    - S-1-5-32-544
+    - S-1-5-9
   - id: 2.2.9
     description: 2.2.9 Ensure 'Allow log on through Remote Desktop Services' is set to 'Administrators' (DC only)
     name: SeRemoteInteractiveLogonRight
-    users: []
+    users:
+    - S-1-5-32-544
 
 # Well-known, locale-independent subcategory GUIDs (identical on every Windows
 # language/locale). Used instead of matching on the localized subcategory name
