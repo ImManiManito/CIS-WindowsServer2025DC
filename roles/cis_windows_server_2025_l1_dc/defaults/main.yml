@@ -1855,6 +1855,45 @@ cis_user_rights:
     name: SeRemoteInteractiveLogonRight
     users: []
 
+# Well-known, locale-independent subcategory GUIDs (identical on every Windows
+# language/locale). Used instead of matching on the localized subcategory name
+# so audit_policy.yml works correctly on non-English Windows Server installs.
+cis_audit_subcategory_guids:
+  Credential Validation: "{0CCE923F-69AE-11D9-BED3-505054503030}"
+  Kerberos Authentication Service: "{0CCE9242-69AE-11D9-BED3-505054503030}"
+  Kerberos Service Ticket Operations: "{0CCE9240-69AE-11D9-BED3-505054503030}"
+  Application Group Management: "{0CCE9239-69AE-11D9-BED3-505054503030}"
+  Computer Account Management: "{0CCE9236-69AE-11D9-BED3-505054503030}"
+  Distribution Group Management: "{0CCE9238-69AE-11D9-BED3-505054503030}"
+  Other Account Management Events: "{0CCE923A-69AE-11D9-BED3-505054503030}"
+  Security Group Management: "{0CCE9237-69AE-11D9-BED3-505054503030}"
+  User Account Management: "{0CCE9235-69AE-11D9-BED3-505054503030}"
+  Plug and Play Events: "{0CCE9248-69AE-11D9-BED3-505054503030}"
+  Process Creation: "{0CCE922B-69AE-11D9-BED3-505054503030}"
+  Directory Service Access: "{0CCE923B-69AE-11D9-BED3-505054503030}"
+  Directory Service Changes: "{0CCE923C-69AE-11D9-BED3-505054503030}"
+  Account Lockout: "{0CCE9217-69AE-11D9-BED3-505054503030}"
+  Group Membership: "{0CCE9249-69AE-11D9-BED3-505054503030}"
+  Logoff: "{0CCE9216-69AE-11D9-BED3-505054503030}"
+  Logon: "{0CCE9215-69AE-11D9-BED3-505054503030}"
+  Other Logon/Logoff Events: "{0CCE921C-69AE-11D9-BED3-505054503030}"
+  Special Logon: "{0CCE921B-69AE-11D9-BED3-505054503030}"
+  Detailed File Share: "{0CCE9244-69AE-11D9-BED3-505054503030}"
+  File Share: "{0CCE9224-69AE-11D9-BED3-505054503030}"
+  Other Object Access Events: "{0CCE9227-69AE-11D9-BED3-505054503030}"
+  Removable Storage: "{0CCE9245-69AE-11D9-BED3-505054503030}"
+  Audit Policy Change: "{0CCE922F-69AE-11D9-BED3-505054503030}"
+  Authentication Policy Change: "{0CCE9230-69AE-11D9-BED3-505054503030}"
+  Authorization Policy Change: "{0CCE9231-69AE-11D9-BED3-505054503030}"
+  MPSSVC Rule-Level Policy Change: "{0CCE9232-69AE-11D9-BED3-505054503030}"
+  Other Policy Change Events: "{0CCE9234-69AE-11D9-BED3-505054503030}"
+  Sensitive Privilege Use: "{0CCE9228-69AE-11D9-BED3-505054503030}"
+  IPsec Driver: "{0CCE9213-69AE-11D9-BED3-505054503030}"
+  Other System Events: "{0CCE9214-69AE-11D9-BED3-505054503030}"
+  Security State Change: "{0CCE9210-69AE-11D9-BED3-505054503030}"
+  Security System Extension: "{0CCE9211-69AE-11D9-BED3-505054503030}"
+  System Integrity: "{0CCE9212-69AE-11D9-BED3-505054503030}"
+
 cis_audit_policies:
   - id: 17.1.1
     description: 17.1.1 Ensure 'Audit Credential Validation' is set to 'Success and Failure'

@@ -1,9 +1,67 @@
 ---
+# ansible.windows.win_audit_policy_system resolves category/subcategory names by parsing
+# the localized output of "auditpol /list ... /r". On non-English Windows Server installs
+# (e.g. Spanish) the CSV header it expects ("Category"/"Subcategory") does not exist, causing
+# "No se encuentra la propiedad 'Category*'". We call auditpol directly using the well-known,
+# locale-independent subcategory GUIDs instead (see cis_audit_subcategory_guids), applying every
+# entry in a single PowerShell invocation/SSH round trip instead of one Ansible task per item.
 - name: Apply CIS Advanced Audit Policy subcategories
-  ansible.windows.win_audit_policy_system:
-    subcategory: "{{ item.subcategory }}"
-    audit_type: "{{ (item.success and item.failure) | ternary('success, failure', item.success | ternary('success', 'failure')) }}"
-  loop: "{{ cis_audit_policies }}"
-  throttle: 5
-  loop_control:
-    label: "{{ item.id }} - {{ item.subcategory }}"
+  ansible.windows.win_powershell:
+    parameters:
+      Items: "{{ cis_audit_policies }}"
+      GuidMap: "{{ cis_audit_subcategory_guids }}"
+    script: |
+      [CmdletBinding(SupportsShouldProcess)]
+      param(
+        [Object[]]$Items,
+        [hashtable]$GuidMap
+      )
+
+      $ErrorActionPreference = 'Stop'
+      # auditpol refuses to write to a file that already exists (ERROR_FILE_EXISTS),
+      # so only reserve a path, do not pre-create it like GetTempFileName() does.
+      $backupFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ([System.IO.Path]::GetRandomFileName())
+      try {
+        & auditpol /backup /file:$backupFile | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+          throw "auditpol /backup failed with exit code $LASTEXITCODE"
+        }
+        $currentPolicy = @{}
+        foreach ($row in (Import-Csv -LiteralPath $backupFile)) {
+          # auditpol /backup also emits per-user policy/options rows without this column;
+          # indexing a hashtable with a null key throws NullArrayIndex, so skip those rows.
+          $rowGuid = $row.'Subcategory GUID'
+          if ($rowGuid) {
+            $currentPolicy[$rowGuid] = [int]$row.'Setting Value'
+          }
+        }
+      }
+      finally {
+        Remove-Item -LiteralPath $backupFile -Force -ErrorAction SilentlyContinue
+      }
+
+      $changedItems = [System.Collections.Generic.List[string]]@()
+      foreach ($policyItem in $Items) {
+        $guid = $GuidMap[$policyItem.subcategory]
+        if (-not $guid) {
+          throw "No subcategory GUID mapping found for '$($policyItem.subcategory)' ($($policyItem.id))"
+        }
+
+        $desiredValue = 0
+        if ($policyItem.success) { $desiredValue = $desiredValue -bor 1 }
+        if ($policyItem.failure) { $desiredValue = $desiredValue -bor 2 }
+
+        $currentValue = if ($currentPolicy.ContainsKey($guid)) { $currentPolicy[$guid] } else { -1 }
+        if ($currentValue -ne $desiredValue -and $PSCmdlet.ShouldProcess($policyItem.id, "Set audit policy")) {
+          $successFlag = if ($policyItem.success) { 'enable' } else { 'disable' }
+          $failureFlag = if ($policyItem.failure) { 'enable' } else { 'disable' }
+          & auditpol /set /subcategory:"$guid" /success:$successFlag /failure:$failureFlag | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            throw "auditpol /set failed with exit code $LASTEXITCODE for $($policyItem.id) ($($policyItem.subcategory))"
+          }
+          $changedItems.Add($policyItem.id)
+        }
+      }
+
+      $Ansible.Result.changed_items = @($changedItems)
+      $Ansible.Changed = $changedItems.Count -gt 0
