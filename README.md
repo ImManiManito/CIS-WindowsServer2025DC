@@ -1,8 +1,27 @@
 # CIS Microsoft Windows Server 2025 v2.1.0 L1 DC — Ansible over SSH
 
-Generated from `CIS_Microsoft_Windows_Server_2025_v2.1.0_L1_DC (1).audit` for this architecture:
+*[Leer este documento en español](README.es.md)*
 
-`Ubuntu Ansible control node -> SSH/OpenSSH -> PowerShell -> Windows Server 2025 Domain Controller`
+This repository provides an Ansible role that automates the **CIS Microsoft Windows Server 2025 v2.1.0 Level 1 Domain Controller** benchmark over SSH.
+
+It was generated from the Tenable/CIS audit file `CIS_Microsoft_Windows_Server_2025_v2.1.0_L1_DC (1).audit` and implements the controls that can be safely applied as code. After applying the automated portion and documenting the review items, the environment reached a **68.81% compliance score** on a Tenable scan.
+
+For the full architecture description, file-by-file reference, and integration notes, see [ARCHITECTURE.md](ARCHITECTURE.md) (also available [in Spanish](ARCHITECTURE.es.md)).
+
+## Target architecture
+
+```text
+Ubuntu Ansible control node
+           |
+           | SSH
+           v
+Windows Server 2025 Domain Controller
+           +-- Microsoft OpenSSH Server
+           +-- DefaultShell = Windows PowerShell
+           +-- ansible.windows / community.windows modules
+```
+
+No WinRM is required; Ansible connects through `ansible_connection=ssh` and executes Windows modules over a PowerShell shell.
 
 ## Safety model
 
@@ -15,10 +34,12 @@ Domain Controllers are high-impact systems. The role intentionally defaults `cis
 - Registry values required absent: 3
 - Advanced Audit Policy subcategories: 34
 - User Rights Assignment controls: 38
+- Password policy checks: 7
+- Lockout policy checks: 3
 - User-context registry controls held for review: 7
 - Complex/conditional registry checks held for review: 18
 
-The `control_manifest.yml` file lists items intentionally held for review instead of guessing at conditional/multi-value semantics.
+The [control_manifest.yml](control_manifest.yml) file lists items intentionally held for review instead of guessing at conditional/multi-value semantics.
 
 ## Requirements
 
