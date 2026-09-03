@@ -103,9 +103,85 @@ The supplied CIS audit explicitly notes that Password Policy and Account Lockout
 
 `win_user_right` with `action: set` replaces the complete principal list for that privilege. This is intentionally disabled by default because applications, backup software, monitoring agents, Exchange/IIS components, or service identities can require additional rights. Review `cis_user_rights` before enabling it.
 
-## User-context policies
+## Feature flags
 
-CIS controls targeting HKU/HKCU are listed in `control_manifest.yml` rather than forced across whichever user hives happen to be loaded at runtime. For a Domain Controller these should normally be delivered through a domain GPO/user policy rather than opportunistically editing loaded profiles.
+The role is controlled through boolean flags defined in [roles/cis_windows_server_2025_l1_dc/defaults/main.yml](roles/cis_windows_server_2025_l1_dc/defaults/main.yml) and overridden in [group_vars/windows_2025_dc.yml](group_vars/windows_2025_dc.yml) for this site:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `cis_apply_domain_account_policy` | `false` | Sets the effective default domain password/lockout policy. High-impact; keep disabled until approved. |
+| `cis_apply_user_rights` | `false` | Replaces the complete principal list for each user right. Validate against your services before enabling. |
+| `cis_apply_machine_registry` | `true` | Applies 194 CIS machine registry settings. |
+| `cis_apply_registry_removals` | `true` | Removes registry values that CIS requires to be absent. |
+| `cis_apply_audit_policy` | `true` | Configures 34 Advanced Audit Policy subcategories. |
+| `cis_apply_security_options` | `true` | Sets additional security options (anonymous SID/Name translation, force logoff). |
+| `cis_apply_account_renames` | `false` | Renames built-in Administrator and Guest accounts. |
+| `cis_apply_logon_banner` | `false` | Configures the legal notice logon banner. |
+
+## Variable quick reference
+
+Key tunables in `defaults/main.yml`:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `cis_administrator_account_name` | `CIS-Administrator-CHANGE-ME` | New name for the built-in Administrator account (RID 500). |
+| `cis_guest_account_name` | `CIS-Guest-CHANGE-ME` | New name for the built-in Guest account (RID 501). |
+| `cis_legal_notice_caption` | `Authorized Use Only` | Title of the legal notice logon banner. |
+| `cis_legal_notice_text` | *see file* | Body of the legal notice logon banner. |
+| `cis_domain_password_history` | `24` | Number of unique passwords remembered. |
+| `cis_domain_max_password_age_days` | `365` | Maximum password age. |
+| `cis_domain_min_password_age_days` | `1` | Minimum password age. |
+| `cis_domain_min_password_length` | `14` | Minimum password length. |
+| `cis_domain_complexity_enabled` | `true` | Require password complexity. |
+| `cis_domain_reversible_encryption_enabled` | `false` | Store passwords using reversible encryption. |
+| `cis_domain_lockout_duration_minutes` | `15` | Account lockout duration. |
+| `cis_domain_lockout_threshold` | `5` | Failed logon threshold. |
+| `cis_domain_lockout_observation_window_minutes` | `15` | Observation window for lockout threshold. |
+
+Review and customize these values in `group_vars/windows_2025_dc.yml` or pass them as extra vars before enabling the corresponding categories.
+
+## What is not automated
+
+The role intentionally leaves some controls for manual review. These are listed in [control_manifest.yml](control_manifest.yml):
+
+* **User-context registry controls (7)** — HKU/HKCU settings such as toast notifications, attachment zone information, and Windows Spotlight. These should normally be delivered through a domain GPO/user policy rather than edited opportunistically on loaded profiles.
+* **Complex/conditional registry checks (18)** — Controls with multi-value requirements (e.g., anonymous named pipes/shares, accessible registry paths, NetBIOS, NTLM, LDAP signing, UAC prompt behavior, smart card removal) that require organizational decisions before hard-coding.
+
+Resolving these items through your approved change process is required to move the compliance score beyond the current **68.81%**.
+
+## Troubleshooting
+
+### SSH connection fails
+
+* Confirm OpenSSH Server is installed and running: `Get-Service sshd` on the DC.
+* Confirm the default shell is PowerShell: `Get-ItemProperty 'HKLM:\SOFTWARE\OpenSSH' -Name DefaultShell`.
+* Run [bootstrap/configure_openssh_for_ansible.ps1](bootstrap/configure_openssh_for_ansible.ps1) as Administrator if needed.
+
+### `win_ping` fails with a shell error
+
+* Verify `ansible_shell_type=powershell` and `ansible_shell_executable=powershell.exe` in the inventory.
+* Ensure the SSH user is a member of the local Administrators group on the DC.
+
+### Audit policy task fails on non-English Windows
+
+The role avoids localized subcategory names and calls `auditpol` directly using locale-independent GUIDs. If you still see errors, verify that the `cis_audit_subcategory_guids` map in `defaults/main.yml` includes the subcategory referenced by the failing control.
+
+### User Rights cause service outages
+
+If enabling `cis_apply_user_rights=true` breaks an application or service:
+
+1. Identify the affected privilege and the missing service identity from the application logs or error message.
+2. Add the required SID or account name to the relevant entry in `cis_user_rights` inside `defaults/main.yml`.
+3. Re-apply with the flag set to `true`.
+
+> Note: `win_user_right` with `action: set` replaces the entire principal list, so the `cis_user_rights` list must explicitly include every account that needs the privilege.
+
+## Next steps
+
+1. Review the full architecture and operational guidance in [ARCHITECTURE.md](ARCHITECTURE.md).
+2. Customize `group_vars/windows_2025_dc.yml` and the variables in `roles/cis_windows_server_2025_l1_dc/defaults/main.yml`.
+3. Resolve the items listed in [control_manifest.yml](control_manifest.yml) through your approved change process.
+4. Run the deployment sequence above and verify the updated Tenable compliance score.
 
 ## No automatic reboot
 

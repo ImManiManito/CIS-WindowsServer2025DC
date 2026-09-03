@@ -62,6 +62,7 @@ El proyecto utiliza deliberadamente `ansible_connection=ssh` porque:
 | **[control_manifest.yml](control_manifest.yml)** | Lista los controles que el generador **no** automatizó intencionalmente porque son condicionales, multi-valor, de contexto de usuario (HKU) o requieren revisión organizacional. |
 | **[GENERATION_SUMMARY.json](GENERATION_SUMMARY.json)** | Resumen legible por máquina de la ejecución de generación: total de ítems personalizados, configuraciones de registro automatizadas, eliminaciones, subcategorías de auditoría, derechos de usuario, etc. |
 | **[README.md](README.md)** | Guía de inicio rápido para el usuario final: requisitos, comandos de validación y advertencias de seguridad. |
+| **[ARCHITECTURE.es.md](ARCHITECTURE.es.md)** | Este archivo. Arquitectura completa, referencia archivo por archivo, manual operativo e integración con otros proyectos. |
 
 ### Bootstrap
 
@@ -230,7 +231,57 @@ Para aumentar la puntuación, habilite las categorías deshabilitadas tras valid
 
 ---
 
-## 6. Consideraciones de seguridad y seguridad operacional
+## 6. Configuración y ajuste
+
+### Banderas de funcionalidad
+
+Todas las categorías de hardening están controladas por banderas `cis_apply_*`. Las sobrescritas actuales del sitio en [group_vars/windows_2025_dc.yml](group_vars/windows_2025_dc.yml) mantienen los controles de alto impacto deshabilitados hasta su validación:
+
+```yaml
+cis_apply_domain_account_policy: false
+cis_apply_user_rights: false
+cis_apply_account_renames: false
+cis_apply_logon_banner: false
+
+cis_apply_machine_registry: true
+cis_apply_registry_removals: true
+cis_apply_audit_policy: true
+cis_apply_security_options: true
+```
+
+### Valores ajustables
+
+Los valores predeterminados se definen en [roles/cis_windows_server_2025_l1_dc/defaults/main.yml](roles/cis_windows_server_2025_l1_dc/defaults/main.yml). Los más comúnmente revisados son:
+
+| Variable | Valor por defecto | Notas |
+|----------|-------------------|-------|
+| `cis_administrator_account_name` | `CIS-Administrator-CHANGE-ME` | Debe cambiarse antes de habilitar `cis_apply_account_renames`. |
+| `cis_guest_account_name` | `CIS-Guest-CHANGE-ME` | Debe cambiarse antes de habilitar `cis_apply_account_renames`. |
+| `cis_legal_notice_caption` | `Authorized Use Only` | Personalizar según la política organizacional. |
+| `cis_legal_notice_text` | *ver defaults* | Personalizar según la política organizacional. |
+| `cis_domain_password_history` | `24` | Mínimo requerido por CIS. |
+| `cis_domain_max_password_age_days` | `365` | Vida máxima de la contraseña. |
+| `cis_domain_min_password_age_days` | `1` | Evita cambios rápidos de contraseña. |
+| `cis_domain_min_password_length` | `14` | Mínimo requerido por CIS. |
+| `cis_domain_complexity_enabled` | `true` | Habilita complejidad de contraseña. |
+| `cis_domain_reversible_encryption_enabled` | `false` | Debe permanecer deshabilitado según CIS. |
+| `cis_domain_lockout_duration_minutes` | `15` | Duración del bloqueo. |
+| `cis_domain_lockout_threshold` | `5` | Intentos fallidos antes del bloqueo. |
+| `cis_domain_lockout_observation_window_minutes` | `15` | Ventana de observación del umbral. |
+
+### Inventario y credenciales
+
+El [inventory/hosts.ini](inventory/hosts.ini) actual utiliza una contraseña en texto plano. Para producción, reemplace `ansible_ssh_pass` por autenticación con clave SSH:
+
+```ini
+[windows_2025_dc:vars]
+ansible_connection=ssh
+ansible_shell_type=powershell
+ansible_shell_executable=powershell.exe
+ansible_ssh_private_key_file=~/.ssh/id_ed25519_cis_dc
+```
+
+## 7. Consideraciones de seguridad y seguridad operacional
 
 * **Los Controladores de Dominio son sistemas de alto impacto:** el rol deshabilita por defecto los controles más disruptivos.
 * **Sin reinicio automático:** el rol nunca reinicia un DC. Planifique los reinicios por separado.
@@ -242,7 +293,41 @@ Para aumentar la puntuación, habilite las categorías deshabilitadas tras valid
 
 ---
 
-## 7. Integración con el espacio de trabajo más amplio
+## 8. Manual operativo
+
+### Antes de la primera ejecución
+
+1. **Revise el inventario.** Confirme el nombre/IP del DC, el puerto SSH y el método de autenticación en [inventory/hosts.ini](inventory/hosts.ini).
+2. **Revise `group_vars`.** Asegúrese de que solo las categorías que desea aplicar estén habilitadas en [group_vars/windows_2025_dc.yml](group_vars/windows_2025_dc.yml).
+3. **Personalice los valores predeterminados.** Cambie los nombres de cuenta marcadores, el texto del banner y los valores de contraseñas/bloqueo en [roles/cis_windows_server_2025_l1_dc/defaults/main.yml](roles/cis_windows_server_2025_l1_dc/defaults/main.yml).
+4. **Resuelva los ítems de `control_manifest.yml`.** Decida cómo su organización abordará los 7 controles de contexto de usuario y los 18 controles complejos/condicionales.
+5. **Tome una instantánea/respaldo del DC.** Realice una instantánea de VM o un respaldo del estado del sistema antes de aplicar cambios.
+6. **Programe una ventana de mantenimiento.** Aunque el rol no reinicia automáticamente, algunos cambios pueden requerir un reinicio para surtir efecto completamente.
+
+### Durante la ejecución
+
+* Observe la salida del *preflight* para confirmar la versión del SO, el rol de dominio, la elevación y las rutas localizadas.
+* Revise la salida de `--diff` para ver exactamente qué valores de registro, políticas de auditoría y opciones de seguridad cambian.
+* Si ejecuta en modo `--check`, tenga en cuenta que algunos módulos Windows no pueden simular completamente los cambios.
+
+### Después de la ejecución
+
+1. Verifique que los servicios y aplicaciones aún funcionen correctamente.
+2. Ejecute un nuevo escaneo de cumplimiento de Tenable para medir la puntuación actualizada.
+3. Aborde las brechas restantes habilitando banderas adicionales o resolviendo los ítems de `control_manifest.yml`.
+4. Documente cualquier desviación o excepción para los auditores.
+
+### Retroceso
+
+Dado que el rol utiliza módulos de Ansible que imponen estado, puede revertir la mayoría de los cambios mediante:
+
+* Restauración desde una instantánea de VM o un respaldo del estado del sistema para problemas mayores.
+* Establecer la bandera `cis_apply_*` correspondiente en `false` y volver a ejecutar el *playbook*. Esto elimina solo valores gestionados por módulos idempotentes (`win_regedit` con `state: absent`, etc.); **no** revierte automáticamente cada control CIS a su valor anterior.
+* Para la política de contraseñas de dominio, establezca manualmente los valores deseados con `Set-ADDefaultDomainPasswordPolicy` o a través de la GPO Default Domain Policy.
+
+> **Importante:** Pruebe siempre los pasos de retroceso en un entorno de laboratorio antes de depender de ellos en producción.
+
+## 9. Integración con el espacio de trabajo más amplio
 
 | Repositorio | Relación |
 |-------------|----------|
@@ -251,3 +336,11 @@ Para aumentar la puntuación, habilite las categorías deshabilitadas tras valid
 | `CIS-WindowsServer2025DC` (este repositorio) | Rol de hardening L1 específico para Controladores de Dominio Windows Server 2025. |
 
 En conjunto, estos proyectos soportan la postura de seguridad de la organización: el proyecto PCI-DSS produce evidencias de cumplimiento, mientras que los proyectos CIS endurecen la infraestructura subyacente de Windows Server.
+
+---
+
+## 10. Resumen
+
+Este proyecto entrega una implementación de infraestructura como código del benchmark **CIS Microsoft Windows Server 2025 v2.1.0 L1 Controlador de Dominio** usando Ansible por SSH. Automatiza 194 configuraciones de registro a nivel máquina, 34 políticas de auditoría avanzada, 38 asignaciones de derechos de usuario, políticas de contraseñas/bloqueo de dominio, y renombrados de cuentas/banners opcionales, mientras deja intencionalmente 25 controles complejos o de contexto de usuario en [control_manifest.yml](control_manifest.yml) para revisión organizacional.
+
+Tras aplicar los controles automatizados, el entorno alcanzó un **68.81% de cumplimiento** en un escaneo de Tenable. La brecha restante puede cerrarse habilitando las banderas de alto impacto tras su validación y resolviendo los ítems de revisión a través del proceso de cambios aprobado.

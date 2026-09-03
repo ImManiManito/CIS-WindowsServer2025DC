@@ -62,6 +62,7 @@ The project deliberately uses `ansible_connection=ssh` because:
 | **[control_manifest.yml](control_manifest.yml)** | Lists the controls that the generator intentionally did **not** automate because they are conditional, multi-valued, user-context (HKU), or require organizational review. |
 | **[GENERATION_SUMMARY.json](GENERATION_SUMMARY.json)** | Machine-readable summary of the generation run: total custom items, automated registry settings, removals, audit subcategories, user rights, etc. |
 | **[README.md](README.md)** | End-user quick-start guide: requirements, validation commands, and safety warnings. |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | This file. Complete architecture, file-by-file reference, operational runbook, and integration notes. |
 
 ### Bootstrap
 
@@ -230,7 +231,57 @@ To increase the score, enable the disabled categories after validation and resol
 
 ---
 
-## 6. Security and safety considerations
+## 6. Configuration and tuning
+
+### Feature flags
+
+All hardening categories are gated by `cis_apply_*` flags. The current site overrides in [group_vars/windows_2025_dc.yml](group_vars/windows_2025_dc.yml) keep high-impact controls disabled until they are validated:
+
+```yaml
+cis_apply_domain_account_policy: false
+cis_apply_user_rights: false
+cis_apply_account_renames: false
+cis_apply_logon_banner: false
+
+cis_apply_machine_registry: true
+cis_apply_registry_removals: true
+cis_apply_audit_policy: true
+cis_apply_security_options: true
+```
+
+### Tunable values
+
+Default values are defined in [roles/cis_windows_server_2025_l1_dc/defaults/main.yml](roles/cis_windows_server_2025_l1_dc/defaults/main.yml). The most commonly reviewed are:
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `cis_administrator_account_name` | `CIS-Administrator-CHANGE-ME` | Must be changed before enabling `cis_apply_account_renames`. |
+| `cis_guest_account_name` | `CIS-Guest-CHANGE-ME` | Must be changed before enabling `cis_apply_account_renames`. |
+| `cis_legal_notice_caption` | `Authorized Use Only` | Customize to match organizational policy. |
+| `cis_legal_notice_text` | *see defaults* | Customize to match organizational policy. |
+| `cis_domain_password_history` | `24` | CIS required minimum. |
+| `cis_domain_max_password_age_days` | `365` | Maximum password lifetime. |
+| `cis_domain_min_password_age_days` | `1` | Prevents rapid password cycling. |
+| `cis_domain_min_password_length` | `14` | CIS required minimum. |
+| `cis_domain_complexity_enabled` | `true` | Enables password complexity. |
+| `cis_domain_reversible_encryption_enabled` | `false` | Must remain disabled per CIS. |
+| `cis_domain_lockout_duration_minutes` | `15` | Lockout duration. |
+| `cis_domain_lockout_threshold` | `5` | Failed attempts before lockout. |
+| `cis_domain_lockout_observation_window_minutes` | `15` | Observation window for threshold. |
+
+### Inventory and credentials
+
+The current [inventory/hosts.ini](inventory/hosts.ini) uses a plaintext password. For production, replace `ansible_ssh_pass` with SSH key authentication:
+
+```ini
+[windows_2025_dc:vars]
+ansible_connection=ssh
+ansible_shell_type=powershell
+ansible_shell_executable=powershell.exe
+ansible_ssh_private_key_file=~/.ssh/id_ed25519_cis_dc
+```
+
+## 7. Security and safety considerations
 
 * **Domain Controllers are high-impact:** The role disables the most disruptive controls by default.
 * **No automatic reboot:** The role never reboots a DC. Plan restarts separately.
@@ -242,7 +293,41 @@ To increase the score, enable the disabled categories after validation and resol
 
 ---
 
-## 7. Integration with the broader workspace
+## 8. Operational runbook
+
+### Before the first run
+
+1. **Review the inventory.** Confirm the DC hostname/IP, SSH port, and authentication method in [inventory/hosts.ini](inventory/hosts.ini).
+2. **Review `group_vars`.** Make sure only the categories you want to apply are enabled in [group_vars/windows_2025_dc.yml](group_vars/windows_2025_dc.yml).
+3. **Customize defaults.** Change placeholder account names, banner text, and password/lockout values in [roles/cis_windows_server_2025_l1_dc/defaults/main.yml](roles/cis_windows_server_2025_l1_dc/defaults/main.yml).
+4. **Resolve `control_manifest.yml` items.** Decide how your organization will address the 7 user-context and 18 complex/conditional controls.
+5. **Snapshot/back up the DC.** Take a VM snapshot or system-state backup before applying changes.
+6. **Schedule a maintenance window.** Although the role does not reboot automatically, some changes may require a restart to become fully effective.
+
+### During the run
+
+* Watch the preflight output to confirm OS version, domain role, elevation, and localized paths.
+* Review the `--diff` output to see exactly which registry values, audit policies, and security options change.
+* If running in `--check`, note that some Windows modules cannot fully simulate changes.
+
+### After the run
+
+1. Verify services and applications still function correctly.
+2. Run a new Tenable compliance scan to measure the updated score.
+3. Address any remaining gaps by enabling additional flags or resolving `control_manifest.yml` items.
+4. Document any deviations or exceptions for auditors.
+
+### Rollback
+
+Because the role uses Ansible modules that enforce state, you can revert most changes by:
+
+* Restoring from a VM snapshot or system-state backup for major issues.
+* Setting the relevant `cis_apply_*` flag to `false` and re-running the playbook. This removes only values managed by idempotent modules (`win_regedit` with `state: absent`, etc.); it does **not** automatically revert every CIS control to its previous value.
+* For domain password policy, manually set the desired values with `Set-ADDefaultDomainPasswordPolicy` or through the Default Domain Policy GPO.
+
+> **Important:** Always test rollback steps in a lab environment before relying on them in production.
+
+## 9. Integration with the broader workspace
 
 | Repository | Relationship |
 |------------|--------------|
@@ -251,3 +336,11 @@ To increase the score, enable the disabled categories after validation and resol
 | `CIS-WindowsServer2025DC` (this repo) | Domain Controller-specific Windows Server 2025 L1 hardening role. |
 
 Together, these projects support the organization's security posture: the PCI-DSS project produces compliance evidence, while the CIS projects harden the underlying Windows Server infrastructure.
+
+---
+
+## 10. Summary
+
+This project delivers an infrastructure-as-code implementation of the **CIS Microsoft Windows Server 2025 v2.1.0 L1 Domain Controller** benchmark using Ansible over SSH. It automates 194 machine registry settings, 34 advanced audit policies, 38 user rights assignments, domain password/lockout policies, and optional account renames/logon banners, while intentionally leaving 25 complex or user-context controls in [control_manifest.yml](control_manifest.yml) for organizational review.
+
+After applying the automated controls, the environment achieved **68.81% compliance** on a Tenable scan. The remaining gap can be closed by enabling the high-impact flags after validation and resolving the review items through the approved change process.
