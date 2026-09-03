@@ -225,7 +225,7 @@ cis_registry_settings:
     name: MaxIdleTime
     value_type: POLICY_DWORD
     audit_value_data: '[1..900000]'
-    data: 1
+    data: 900000
     registry_type: dword
   - id: 18.10.57.3.11.1
     description: 18.10.57.3.11.1 Ensure 'Do not delete temp folders upon exit' is set to 'Disabled'
