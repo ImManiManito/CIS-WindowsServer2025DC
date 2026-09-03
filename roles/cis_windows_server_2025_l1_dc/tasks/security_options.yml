@@ -7,7 +7,24 @@
   throttle: 3
 
 - name: Force logoff when logon hours expire (CIS 2.3.11.5)
-  community.windows.win_security_policy:
-    section: "System Access"
-    key: "ForceLogoffWhenHourExpire"
-    value: 1
+  ansible.windows.win_shell: |
+    $inf = @'
+    [Unicode]
+    Unicode=yes
+    [System Access]
+    ForceLogoffWhenHourExpire = 1
+    [Version]
+    signature="$CHICAGO$"
+    Revision=1
+    '@
+    $infPath = "$env:TEMP\cis_force_logoff.inf"
+    $sdbPath = "$env:TEMP\cis_force_logoff.sdb"
+    $inf | Set-Content -Path $infPath -Encoding Unicode
+    secedit /configure /db $sdbPath /cfg $infPath /areas SECURITYPOLICY /quiet
+    $rc = $LASTEXITCODE
+    Remove-Item -Path $infPath, $sdbPath -ErrorAction SilentlyContinue
+    exit $rc
+  throttle: 3
+  register: _force_logoff_result
+  changed_when: _force_logoff_result.rc == 0
+  failed_when: _force_logoff_result.rc != 0
